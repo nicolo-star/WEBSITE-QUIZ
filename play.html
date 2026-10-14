@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Play – Pop Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="nav"></div>
+<div class="wrap">
+
+<section id="play">
+ <div class="top" style="margin-top:24px"><a class="back" href="quizzes.html" style="text-decoration:none">← Quizzes</a><div class="bar"><i id="fill"></i></div><span class="meta" id="count"></span></div>
+ <div class="card q" id="qcard"><h2 id="qtext"></h2><div class="opts" id="opts"></div><div class="note" id="note" aria-live="polite"></div><button class="btn hide" id="next">Next question</button></div>
+</section>
+<section id="done" class="hide" style="margin-top:24px"><div class="card res">
+ <div class="ring"><svg width="170" height="170" viewBox="0 0 170 170"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#16a34a"/><stop offset="1" stop-color="#a3d934"/></linearGradient></defs><circle class="t" cx="85" cy="85" r="70"/><circle class="p" id="arc" cx="85" cy="85" r="70"/></svg><div class="g" id="letter"></div></div>
+ <h2 id="score"></h2><p id="msg"></p>
+ <div class="row"><button class="btn" id="retry">Play again</button><a class="btn alt" href="quizzes.html">More quizzes</a><a class="btn alt" href="history.html">My history</a></div>
+ <div class="review" id="review"></div></div></section>
+<section id="nf" class="hide"><div class="empty" style="margin-top:40px">We couldn’t find that quiz. <a href="quizzes.html">Browse all quizzes</a></div></section>
+</div>
+<div id="foot"></div>
+<script src="js/seed.js"></script>
+<script src="js/store.js"></script>
+<script src="js/app.js"></script>
+<script>
+
+const quiz=Store.find(new URLSearchParams(location.search).get("id"));
+let qs,i,score,missed;
+const sec=n=>["play","done","nf"].forEach(s=>$(s).classList.toggle("hide",s!==n));
+function start(){qs=[...quiz.questions].sort(()=>Math.random()-.5);i=0;score=0;missed=[];sec("play");render();scrollTo(0,0)}
+function render(){
+  const q=qs[i];
+  $("qtext").textContent=q.text;$("note").className="note";$("next").classList.add("hide");
+  $("count").textContent=`${quiz.title} · ${i+1}/${qs.length}`;$("fill").style.width=((i+1)/qs.length*100)+"%";
+  $("opts").innerHTML="";
+  q.options.forEach((t,n)=>{const b=document.createElement("button");b.className="opt";b.innerHTML=`<span class="k">${"ABCD"[n]}</span><span></span>`;b.lastChild.textContent=t;b.onclick=()=>pick(n);$("opts").appendChild(b)});
+  const c=$("qcard");c.style.animation="none";c.offsetWidth;c.style.animation="";
+}
+function pick(n){
+  const q=qs[i];
+  [...$("opts").children].forEach((b,k)=>{b.disabled=true;b.classList.add(k===q.answer?"right":k===n?"wrong":"dim")});
+  const ok=n===q.answer;if(ok)score++;else missed.push([q.text,q.options[q.answer],q.options[n]]);
+  $("note").className="note show "+(ok?"ok":"bad");
+  $("note").innerHTML=`<b>${ok?"Correct!":"Not quite."}</b>`;if(q.explanation)$("note").append(q.explanation);
+  $("next").textContent=i===qs.length-1?"See my grade":"Next question";$("next").classList.remove("hide");$("next").focus();
+}
+function finish(){
+  const p=score/qs.length;
+  $("letter").textContent=p===1?"A+":p>=.8?"A":p>=.6?"B":p>=.4?"C":"D";
+  $("score").textContent=`${score} out of ${qs.length} correct`;
+  $("msg").textContent=(p===1?"Perfect score. Nothing to review.":p>=.6?"Nice work. Look over the misses below and go again.":"Good start. Read the answers below, then try once more.")+" Saved to your history.";
+  $("review").innerHTML=missed.length?"<h3>Review</h3>":"";
+  missed.forEach(m=>{const d=document.createElement("div");d.innerHTML="<b></b><small></small>";d.firstChild.textContent=m[0];d.lastChild.textContent=`You chose ${m[2]}. Correct answer: ${m[1]}.`;$("review").appendChild(d)});
+  Store.addAttempt({quizId:quiz.id,title:quiz.title,score,total:qs.length});
+  sec("done");const a=$("arc");a.style.strokeDashoffset=440;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>a.style.strokeDashoffset=440*(1-p)));
+}
+$("next").onclick=()=>{i++;i<qs.length?render():finish()};
+$("retry").onclick=start;
+quiz?start():sec("nf");
+</script>
+</body>
+</html>

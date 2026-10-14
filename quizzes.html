@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quizzes – Pop Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="nav"></div>
+<div class="wrap">
+
+<div class="page"><h1>Quizzes</h1><p class="sub">Search and filter every quiz, built-in and your own.</p></div>
+<div class="toolbar"><input type="search" id="q" placeholder="Search quizzes" aria-label="Search quizzes"><div class="row" id="cats"></div></div>
+<div class="subjects" id="grid"></div>
+</div>
+<div id="foot"></div>
+<script src="js/seed.js"></script>
+<script src="js/store.js"></script>
+<script src="js/app.js"></script>
+<script>
+
+let cat="All",term="";
+const cats=["All",...Object.keys(CATS)];
+$("cats").innerHTML=cats.map(c=>`<button class="chip${c===cat?" on":""}" data-c="${c}">${c}</button>`).join("");
+function draw(){
+  const l=Store.all().filter(z=>(cat==="All"||z.category===cat)&&z.title.toLowerCase().includes(term));
+  $("grid").innerHTML=l.length?l.map(tile).join(""):'<div class="empty" style="grid-column:1/-1">No quizzes match. Try another search or <a href="create.html">create one</a>.</div>';
+}
+$("q").oninput=e=>{term=e.target.value.trim().toLowerCase();draw()};
+$("cats").onclick=e=>{const b=e.target.closest("[data-c]");if(!b)return;cat=b.dataset.c;[...$("cats").children].forEach(x=>x.classList.toggle("on",x===b));draw()};
+draw();
+</script>
+</body>
+</html>

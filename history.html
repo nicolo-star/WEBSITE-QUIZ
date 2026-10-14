@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>History – Pop Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="nav"></div>
+<div class="wrap">
+
+<div class="page"><h1>History</h1><p class="sub">Every game you’ve played, saved in this browser.</p></div>
+<div class="toolbar"><label style="flex-direction:row;align-items:center;display:flex;gap:8px">Your name<input type="text" id="nm" maxlength="20" style="width:180px"></label><button class="chip del" id="clr">Clear history</button></div>
+<div class="stats" style="margin:0 0 10px"><div><b id="h1">0</b><span>games played</span></div><div><b id="h2">–</b><span>average score</span></div><div><b id="h3">–</b><span>best score</span></div></div>
+<div class="sec"><h3>Best score per quiz</h3></div>
+<div class="lb" id="best"></div>
+<div class="sec"><h3>All attempts</h3></div>
+<div class="card scroll"><table class="tbl"><thead><tr><th>Date</th><th>Player</th><th>Quiz</th><th>Score</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+</div>
+<div id="foot"></div>
+<script src="js/seed.js"></script>
+<script src="js/store.js"></script>
+<script src="js/app.js"></script>
+<script>
+
+$("nm").value=Store.name();
+$("nm").onchange=e=>{Store.setName(e.target.value);toast("Name saved")};
+function draw(){
+  const h=Store.hist(),pct=a=>Math.round(a.score/a.total*100);
+  $("h1").textContent=h.length;
+  $("h2").textContent=h.length?Math.round(h.reduce((n,a)=>n+pct(a),0)/h.length)+"%":"–";
+  $("h3").textContent=h.length?Math.max(...h.map(pct))+"%":"–";
+  const best={};h.forEach(a=>{if(!best[a.quizId]||pct(a)>best[a.quizId].p)best[a.quizId]={t:a.title,p:pct(a),n:a.name}});
+  const b=Object.values(best).sort((x,y)=>y.p-x.p);
+  $("best").innerHTML=b.length?b.map((x,i)=>`<div><b>${i+1}. ${esc(x.t)}</b><span>${x.p}% by ${esc(x.n)}</span></div>`).join(""):'<div class="empty">Play a quiz to see your scores here.</div>';
+  $("rows").innerHTML=h.length?h.map((a,i)=>`<tr><td>${new Date(a.date).toLocaleString()}</td><td>${esc(a.name)}</td><td>${esc(a.title)}</td><td><b>${a.score}/${a.total}</b> (${pct(a)}%)</td><td><button class="chip del" data-i="${i}">Delete</button></td></tr>`).join(""):'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:26px">No games yet. <a href="quizzes.html">Play a quiz</a>.</td></tr>';
+}
+$("rows").onclick=e=>{const b=e.target.closest("[data-i]");if(b){Store.removeAttempt(+b.dataset.i);draw()}};
+$("clr").onclick=()=>{if(confirm("Clear all game history?")){Store.clearHist();draw()}};
+draw();
+</script>
+</body>
+</html>
